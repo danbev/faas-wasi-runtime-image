@@ -29,6 +29,7 @@ From a different terminal session:
 ```console
 $ curl http://localhost:8080/data
 add.wasm returned 44
+```
 
 To stop the container:
 ```console
