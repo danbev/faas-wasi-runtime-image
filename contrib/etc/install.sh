@@ -10,6 +10,6 @@ chmod 744 rustup.sh
 source $HOME/.cargo/env
 
 pwd
-pushd /opt/app-root/src
+pushd /home/wasi/src
 cargo build
 popd

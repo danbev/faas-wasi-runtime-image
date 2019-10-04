@@ -16,6 +16,11 @@ $ make build
 ```
 
 You should end up with an image at `oscf/wasi-runtime`.
+```console
+$ docker images
+REPOSITORY         TAG    IMAGE ID     CREATED        SIZE
+oscf/wasi-runtime  0.0.1  f302f05fd2b4 56 seconds ago 9.77MB
+```
 
 ## Running locally
 ```console
@@ -25,3 +30,9 @@ From a different terminal session:
 ```console
 $ curl http://localhost:8080/data
 The answer to your addition was I32(44)$
+
+To stop the container:
+```console
+$ docker ps
+$ docker stop <CONTAINER_ID>
+```

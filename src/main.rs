@@ -28,7 +28,7 @@ impl Service for Echo {
             (&Get, "/data") => {
                 let mut buffer = Vec::new();
                 {
-                    let mut f = File::open("./module/add.wasm").expect("wasm not found");
+                    let mut f = File::open("../module/add.wasm").expect("wasm not found");
                     f.read_to_end(&mut buffer).expect("wasm read error");
                 }
                 let module = wasmi::Module::from_buffer(buffer).expect("create Module error");
@@ -42,7 +42,10 @@ impl Service for Echo {
                 let result: Option<RuntimeValue> =
                     instance.invoke_export("add", &args, &mut NopExternals).expect("invoke error");
                 let b = match result {
-                    Some(r) =>  format!("The answer to your addition was {:?}", r).to_string().into_bytes(),
+                    Some(RuntimeValue::I32(v)) => format!("add.wasm returned {}", v).to_string().into_bytes(),
+                    Some(RuntimeValue::I64(v)) => format!("add.wasm returned {}", v).to_string().into_bytes(),
+                    Some(RuntimeValue::F32(v)) => format!("add.wasm returned {:?}", v).to_string().into_bytes(),
+                    Some(RuntimeValue::F64(v)) => format!("add.wasm returned {:?}", v).to_string().into_bytes(),
                     None => String::from("Failed to get a result from wasm invocation")
                             .to_string().into_bytes(),
                 };
@@ -55,9 +58,7 @@ impl Service for Echo {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
-
+    println!("WASI Runtime started");
     let port = env::var("PORT").expect("PORT environment variable not set");
     let addr_port = format!("0.0.0.0:{}", port);
     let addr = addr_port.parse().unwrap();
