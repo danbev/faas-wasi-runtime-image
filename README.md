@@ -28,7 +28,7 @@ docker run -p 8080:8080 -ti oscf/wasi-runtime:0.0.1
 From a different terminal session:
 ```console
 $ curl http://localhost:8080/data
-The answer to your addition was I32(44)$
+add.wasm returned 44
 
 To stop the container:
 ```console
