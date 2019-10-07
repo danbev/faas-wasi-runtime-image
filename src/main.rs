@@ -13,8 +13,16 @@ use hyper::{Get, StatusCode};
 use hyper::header::ContentLength;
 use hyper::server::{Http, Service, Request, Response};
 
-#[derive(Clone, Copy, Debug)]
-struct Echo;
+//#[derive(Debug)]
+struct Echo {
+    module_path: String,
+}
+
+impl Echo {
+    fn new(module_path: String) -> Echo {
+        Echo { module_path }
+    }
+}
 
 impl Service for Echo {
     type Request = Request;
@@ -23,12 +31,11 @@ impl Service for Echo {
     type Future = FutureResult<Response, hyper::Error>;
 
     fn call(&self, req: Request) -> Self::Future {
-        println!("request {} self: {:?}", req.method(), self);
         futures::future::ok(match (req.method(), req.path()) {
             (&Get, "/data") => {
                 let mut buffer = Vec::new();
                 {
-                    let mut f = File::open("../module/add.wasm").expect("wasm not found");
+                    let mut f = File::open(&self.module_path).expect("wasm not found");
                     f.read_to_end(&mut buffer).expect("wasm read error");
                 }
                 let module = wasmi::Module::from_buffer(buffer).expect("create Module error");
@@ -58,10 +65,12 @@ impl Service for Echo {
 }
 
 fn main() {
-    println!("WASI Runtime started");
+    let args: Vec<String> = env::args().collect();
     let port = env::var("PORT").expect("PORT environment variable not set");
     let addr_port = format!("0.0.0.0:{}", port);
     let addr = addr_port.parse().unwrap();
-    let server = Http::new().bind(&addr, || Ok(Echo)).unwrap();
+    let module_path = args[1].clone();
+    println!("WASI Runtime started. Module path: {}", module_path);
+    let server = Http::new().bind(&addr, move || Ok(Echo::new(module_path.clone()))).unwrap();
     server.run().unwrap();
 }
