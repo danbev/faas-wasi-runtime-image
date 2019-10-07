@@ -18,13 +18,11 @@ RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-li
 RUN rm -f target/x86_64-unknown-linux-musl/release/deps/faas-wasm-runtime*
 
 RUN RUSTFLAGS=-Clinker=musl-gcc cargo install --path . --target=x86_64-unknown-linux-musl
-#cd /home/wasi && cargo build --release  && cargo install --path . && chmod -R 777 /home/wasi
 
 
 FROM alpine:latest
 
 RUN addgroup -g 1000 wasi
-
 RUN adduser -D -s /bin/sh -u 1000 -G wasi wasi
 
 WORKDIR /home/wasi/bin/
@@ -35,6 +33,9 @@ COPY module /home/wasi/module
 
 ENV PORT=8080
 EXPOSE $PORT
+
+ARG MODULE_NAME=add.wasm
+ENV MODULE_NAME=${MODULE_NAME}
 
 USER wasi
 

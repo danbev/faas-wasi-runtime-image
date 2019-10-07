@@ -7,7 +7,7 @@ TEST_IMAGE   = $(IMAGE_NAME):candidate
 .PHONY: build test clean
 
 build:
-	docker build -t $(DOCKER_IMAGE) .
+	docker build --build-arg MODULE_NAME=add.wasm -t $(DOCKER_IMAGE) .
 	# docker build -t $(QUAY_IMAGE) .
 
 test:

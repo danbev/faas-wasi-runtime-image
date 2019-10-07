@@ -15,12 +15,12 @@ use hyper::server::{Http, Service, Request, Response};
 
 //#[derive(Debug)]
 struct WasmExecutor {
-    module_path: String,
+    module_name: String,
 }
 
 impl WasmExecutor {
-    fn new(module_path: String) -> WasmExecutor {
-        WasmExecutor { module_path }
+    fn new(module_name: String) -> WasmExecutor {
+        WasmExecutor { module_name }
     }
 }
 
@@ -35,7 +35,7 @@ impl Service for WasmExecutor {
             (&Get, "/data") => {
                 let mut buffer = Vec::new();
                 {
-                    let mut f = File::open(&self.module_path).expect("wasm not found");
+                    let mut f = File::open("../module/".to_owned() + &self.module_name).expect("wasm not found");
                     f.read_to_end(&mut buffer).expect("wasm read error");
                 }
                 let module = wasmi::Module::from_buffer(buffer).expect("create Module error");
@@ -65,12 +65,11 @@ impl Service for WasmExecutor {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
     let port = env::var("PORT").expect("PORT environment variable not set");
     let addr_port = format!("0.0.0.0:{}", port);
     let addr = addr_port.parse().unwrap();
-    let module_path = args[1].clone();
-    println!("WASI Runtime started. Module path: {}", module_path);
-    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone()))).unwrap();
+    let module_name = env::var("MODULE_NAME").expect("MODULE_NAME environment variable not set");
+    println!("WASI Runtime started. Module name: {}", module_name);
+    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_name.clone()))).unwrap();
     server.run().unwrap();
 }
