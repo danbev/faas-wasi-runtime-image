@@ -28,6 +28,7 @@ oscf/wasi-runtime  0.0.1  4e5d82b8c6b8 3 minutes ago  13.9MB
 ## Running locally
 ```console
 $ docker run -p 8080:8080 -ti oscf/wasi-runtime:0.0.1
+WASI Runtime started. Module name: add.wasm
 ```
 From a different terminal session:
 ```console
