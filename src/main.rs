@@ -14,17 +14,17 @@ use hyper::header::ContentLength;
 use hyper::server::{Http, Service, Request, Response};
 
 //#[derive(Debug)]
-struct Echo {
+struct WasmExecutor {
     module_path: String,
 }
 
-impl Echo {
-    fn new(module_path: String) -> Echo {
-        Echo { module_path }
+impl WasmExecutor {
+    fn new(module_path: String) -> WasmExecutor {
+        WasmExecutor { module_path }
     }
 }
 
-impl Service for Echo {
+impl Service for WasmExecutor {
     type Request = Request;
     type Response = Response;
     type Error = hyper::Error;
@@ -71,6 +71,6 @@ fn main() {
     let addr = addr_port.parse().unwrap();
     let module_path = args[1].clone();
     println!("WASI Runtime started. Module path: {}", module_path);
-    let server = Http::new().bind(&addr, move || Ok(Echo::new(module_path.clone()))).unwrap();
+    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone()))).unwrap();
     server.run().unwrap();
 }
