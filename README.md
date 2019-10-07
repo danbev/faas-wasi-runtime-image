@@ -3,6 +3,10 @@ This image is meant to run in an OpenShift cluster with Knative installed.
 
 It is currently under development and very incomplete.
 
+The idea here is to enable WebAssembly modules, possibly using the WebAssembly
+System Interface (WASI), to be executed as OpenShift Cloud Function. An end
+user could have a WASM module they would like to expose as a function.
+
 ## Source to Image
 
 This image may also be used as a [source to image builder](https://github.com/openshift/source-to-image).
@@ -23,7 +27,7 @@ oscf/wasi-runtime  0.0.1  4e5d82b8c6b8 3 minutes ago  13.9MB
 
 ## Running locally
 ```console
-docker run -p 8080:8080 -ti oscf/wasi-runtime:0.0.1
+$ docker run -p 8080:8080 -ti oscf/wasi-runtime:0.0.1
 ```
 From a different terminal session:
 ```console
