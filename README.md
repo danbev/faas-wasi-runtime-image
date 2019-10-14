@@ -33,6 +33,19 @@ REPOSITORY         TAG    IMAGE ID     CREATED        SIZE
 oscf/wasi-runtime  0.0.1  4e5d82b8c6b8 3 minutes ago  13.9MB
 ```
 
+### WASM test module
+The .wasm module used is located in `module/add.wasm`, and looks like this:
+```console
+$ wasm2wat add.wasm
+(module
+  (type (;0;) (func (param i32 i32) (result i32)))
+  (func (;0;) (type 0) (param i32 i32) (result i32)
+    get_local 0
+    get_local 1
+    i32.add)
+  (export "add" (func 0)))
+```
+
 ## Running locally
 ```console
 $ docker run -p 8080:8080 -ti oscf/wasi-runtime:0.0.1
