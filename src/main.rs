@@ -15,12 +15,12 @@ use wasmtime_jit::{ActionError, ActionOutcome, Context, RuntimeValue};
 
 //#[derive(Debug)]
 struct WasmExecutor {
-    module_name: String,
+    module_path: String,
 }
 
 impl WasmExecutor {
-    fn new(module_name: String) -> WasmExecutor {
-        WasmExecutor { module_name }
+    fn new(module_path: String) -> WasmExecutor {
+        WasmExecutor { module_path }
     }
 }
 
@@ -33,8 +33,7 @@ impl Service for WasmExecutor {
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok(match (req.method(), req.path()) {
             (&Get, "/data") => {
-                let module_dir = concat!(env!("MODULE_DIR"), "/");
-                let mut binary_file = File::open(module_dir.to_owned() + &self.module_name).expect("wasm not found");
+                let mut binary_file = File::open(&self.module_path).expect("wasm not found");
                 let mut binary: Vec<u8> = Vec::new();
                 binary_file.read_to_end(&mut binary).unwrap();
 
@@ -50,7 +49,7 @@ impl Service for WasmExecutor {
                 let args = [RuntimeValue::I32(42), RuntimeValue::I32(2)];
                 let result = context.invoke(&mut instance, "add", &args);
                 let body = match result.unwrap() {
-                    ActionOutcome::Returned { values } => format!("{} returned {:#?}", &self.module_name, values).to_string().into_bytes(),
+                    ActionOutcome::Returned { values } => format!("{} returned {:#?}", &self.module_path, values).to_string().into_bytes(),
                     ActionOutcome::Trapped { message } => format!("Trap from within function: {}", message).to_string().into_bytes(),
                 };
                 Response::new().with_header(ContentLength(body.len() as u64)).with_body(body)
@@ -67,6 +66,6 @@ fn main() {
     let module_name = env::var("MODULE_NAME").expect("MODULE_NAME environment variable not set");
     let module_path = module_dir.to_owned() + &module_name;
     println!("WASI Runtime started. Port: {}, Module path: {}", port, module_path);
-    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_name.clone()))).unwrap();
+    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone()))).unwrap();
     server.run().unwrap();
 }
