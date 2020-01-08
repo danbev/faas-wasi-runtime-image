@@ -15,10 +15,6 @@ write the code needed to extract any required parameters the .wasm module takes
 from the HTTP request, and take the result from the execution of the .wasm and
 place it into the HTTP response.
 
-## Source to Image
-
-This image may also be used as a [source to image builder](https://github.com/openshift/source-to-image).
-
 ## Building
 
 To build the image, run the following command:
