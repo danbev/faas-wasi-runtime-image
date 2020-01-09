@@ -3,7 +3,7 @@ FROM rust:latest as cargo-build
 USER 0
 
 RUN apt-get update
-RUN apt-get install musl-tools -y
+RUN apt-get install musl-tools cmake g++ llvm clang -y
 RUN rustup target add x86_64-unknown-linux-musl
 
 RUN mkdir -p /home/wasi
@@ -14,6 +14,7 @@ COPY s2i /usr/libexec/s2i
 RUN chmod -R 777 /home/wasi
 
 WORKDIR /home/wasi
+RUN ln -s "/usr/bin/g++" "/usr/bin/musl-g++"
 RUN RUSTFLAGS=-Clinker=musl-gcc cargo build --release --target=x86_64-unknown-linux-musl
 RUN rm -f target/x86_64-unknown-linux-musl/release/deps/faas-wasm-runtime*
 
@@ -35,6 +36,7 @@ ENV PORT=8080
 EXPOSE $PORT
 
 ARG MODULE_NAME=add.wasm
+ENV MODULE_DIR=/home/wasi/module
 ENV MODULE_NAME=${MODULE_NAME}
 
 USER wasi

@@ -50,7 +50,7 @@ WASI Runtime started. Module name: add.wasm
 From a different terminal session:
 ```console
 $ curl http://localhost:8080/data
-add.wasm returned 44
+/home/wasi/module/add.wasm returned 44: i32
 ```
 
 To stop the container:
@@ -62,8 +62,12 @@ The go server can be run locally without using Docker with the following
 command:
 ```console
 $ PORT=8080 MODULE_NAME=add.wasm MODULE_DIR=./module cargo run
+    Finished dev [unoptimized + debuginfo] target(s) in 0.15s
+     Running `target/debug/faas-wasm-runtime-image`
+WASI Runtime started. Port: 8080, Module path: ./module/add.wasm
 ```
 And then from a second terminal you can call the service:
 ```console
 $ curl http://localhost:8080/data
+/home/wasi/module/add.wasm returned 44: i32
 ```

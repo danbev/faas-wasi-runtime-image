@@ -37,7 +37,6 @@ impl Service for WasmExecutor {
                 let isa_builder = cranelift_native::builder().unwrap();
                 let flag_builder = settings::builder();
                 let isa = isa_builder.finish(settings::Flags::new(flag_builder));
-
                 let mut context = Context::with_isa(isa);
 
                 let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
@@ -45,7 +44,7 @@ impl Service for WasmExecutor {
                 let args = [RuntimeValue::I32(42), RuntimeValue::I32(2)];
                 let result = context.invoke(&mut instance, "add", &args);
                 let body = match result.unwrap() {
-                    ActionOutcome::Returned { values } => format!("{} returned {:#?}", &self.module_path, values).to_string().into_bytes(),
+                    ActionOutcome::Returned { values } => format!("{} returned {:#}", &self.module_path, values[0]).to_string().into_bytes(),
                     ActionOutcome::Trapped { message } => format!("Trap from within function: {}", message).to_string().into_bytes(),
                 };
                 Response::new().with_header(ContentLength(body.len() as u64)).with_body(body)
@@ -61,14 +60,16 @@ fn main() {
     let module_path = get_module_path();
     println!("WASI Runtime started. Port: {}, Module path: {}", port, module_path);
     let binary: Vec<u8> = read_module(&module_path);
+
+
     let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone(), binary.clone()))).unwrap();
     server.run().unwrap();
 }
 
 fn get_module_path() -> String {
-    let module_dir = concat!(env!("MODULE_DIR"), "/");
+    let module_dir = env::var("MODULE_DIR").expect("MODULE_DIR environment variable was not set");
     let module_name = env::var("MODULE_NAME").expect("MODULE_NAME environment variable not set");
-    module_dir.to_owned() + &module_name
+    module_dir.to_owned() + "/" +  &module_name
 }
 
 fn read_module(module_path: &str) -> Vec<u8> {
