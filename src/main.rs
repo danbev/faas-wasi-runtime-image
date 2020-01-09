@@ -57,19 +57,12 @@ fn main() {
     let port = env::var("PORT").expect("PORT environment variable not set");
     let addr_port = format!("0.0.0.0:{}", port);
     let addr = addr_port.parse().unwrap();
-    let module_path = get_module_path();
+    let module_path = env::var("MODULE_PATH").expect("MODULE_PATH environment variable not set");
     println!("WASI Runtime started. Port: {}, Module path: {}", port, module_path);
     let binary: Vec<u8> = read_module(&module_path);
 
-
     let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone(), binary.clone()))).unwrap();
     server.run().unwrap();
-}
-
-fn get_module_path() -> String {
-    let module_dir = env::var("MODULE_DIR").expect("MODULE_DIR environment variable was not set");
-    let module_name = env::var("MODULE_NAME").expect("MODULE_NAME environment variable not set");
-    module_dir.to_owned() + "/" +  &module_name
 }
 
 fn read_module(module_path: &str) -> Vec<u8> {
