@@ -58,3 +58,12 @@ To stop the container:
 $ docker ps
 $ docker stop <CONTAINER_ID>
 ```
+The go server can be run locally without using Docker with the following
+command:
+```console
+$ PORT=8080 MODULE_NAME=add.wasm MODULE_DIR=./module cargo run
+```
+And then from a second terminal you can call the service:
+```console
+$ curl http://localhost:8080/data
+```

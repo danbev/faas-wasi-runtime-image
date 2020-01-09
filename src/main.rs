@@ -11,16 +11,17 @@ use cranelift_codegen::settings;
 use cranelift_native;
 use std::fs::File;
 use std::io::Read;
-use wasmtime_jit::{ActionError, ActionOutcome, Context, RuntimeValue};
+use wasmtime_jit::{ActionOutcome, Context, RuntimeValue};
 
 //#[derive(Debug)]
 struct WasmExecutor {
     module_path: String,
+    module_binary: Vec<u8>,
 }
 
 impl WasmExecutor {
-    fn new(module_path: String) -> WasmExecutor {
-        WasmExecutor { module_path }
+    fn new(module_path: String, module_binary: Vec<u8>) -> WasmExecutor {
+        WasmExecutor { module_path, module_binary }
     }
 }
 
@@ -33,18 +34,13 @@ impl Service for WasmExecutor {
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok(match (req.method(), req.path()) {
             (&Get, "/data") => {
-                let mut binary_file = File::open(&self.module_path).expect("wasm not found");
-                let mut binary: Vec<u8> = Vec::new();
-                binary_file.read_to_end(&mut binary).unwrap();
-
-
                 let isa_builder = cranelift_native::builder().unwrap();
                 let flag_builder = settings::builder();
                 let isa = isa_builder.finish(settings::Flags::new(flag_builder));
 
                 let mut context = Context::with_isa(isa);
 
-                let mut instance = context.instantiate_module(None, &binary).unwrap();
+                let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
 
                 let args = [RuntimeValue::I32(42), RuntimeValue::I32(2)];
                 let result = context.invoke(&mut instance, "add", &args);
@@ -62,10 +58,22 @@ fn main() {
     let port = env::var("PORT").expect("PORT environment variable not set");
     let addr_port = format!("0.0.0.0:{}", port);
     let addr = addr_port.parse().unwrap();
+    let module_path = get_module_path();
+    println!("WASI Runtime started. Port: {}, Module path: {}", port, module_path);
+    let binary: Vec<u8> = read_module(&module_path);
+    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone(), binary.clone()))).unwrap();
+    server.run().unwrap();
+}
+
+fn get_module_path() -> String {
     let module_dir = concat!(env!("MODULE_DIR"), "/");
     let module_name = env::var("MODULE_NAME").expect("MODULE_NAME environment variable not set");
-    let module_path = module_dir.to_owned() + &module_name;
-    println!("WASI Runtime started. Port: {}, Module path: {}", port, module_path);
-    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone()))).unwrap();
-    server.run().unwrap();
+    module_dir.to_owned() + &module_name
+}
+
+fn read_module(module_path: &str) -> Vec<u8> {
+    let mut module_file = File::open(module_path).expect("wasm not found");
+    let mut binary: Vec<u8> = Vec::new();
+    module_file.read_to_end(&mut binary).unwrap();
+    return binary;
 }
