@@ -26,8 +26,17 @@ impl WasmExecutor {
     }
 }
 
-pub trait RequestExtractor<T> {
-    //fn extract(&self, request: Request) -> Array<T> ;
+pub trait RequestExtractor {
+    fn extract(&self, request: Request) -> Vec<RuntimeValue> ;
+}
+
+impl RequestExtractor for WasmExecutor {
+    fn extract(&self, _request: Request) -> Vec<RuntimeValue> {
+        let mut vec = Vec::new();
+        vec.push(RuntimeValue::I32(42));
+        vec.push(RuntimeValue::I32(2));
+        return vec;
+    }
 }
 
 impl Service for WasmExecutor {
@@ -46,7 +55,7 @@ impl Service for WasmExecutor {
 
                 let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
 
-                let args = [RuntimeValue::I32(42), RuntimeValue::I32(2)];
+                let args = &self.extract(req);
                 let result = context.invoke(&mut instance, &self.function_name, &args);
                 let body = match result.unwrap() {
                     ActionOutcome::Returned { values } => format!("{} returned {:#}", &self.module_path, values[0]).to_string().into_bytes(),
