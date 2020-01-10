@@ -15,14 +15,19 @@ use wasmtime_jit::{ActionOutcome, Context, RuntimeValue};
 
 //#[derive(Debug)]
 struct WasmExecutor {
+    function_name: String,
     module_path: String,
     module_binary: Vec<u8>,
 }
 
 impl WasmExecutor {
-    fn new(module_path: String, module_binary: Vec<u8>) -> WasmExecutor {
-        WasmExecutor { module_path, module_binary }
+    fn new(function_name: String, module_path: String, module_binary: Vec<u8>) -> WasmExecutor {
+        WasmExecutor { function_name, module_path, module_binary }
     }
+}
+
+pub trait RequestExtractor<T> {
+    //fn extract(&self, request: Request) -> Array<T> ;
 }
 
 impl Service for WasmExecutor {
@@ -42,7 +47,7 @@ impl Service for WasmExecutor {
                 let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
 
                 let args = [RuntimeValue::I32(42), RuntimeValue::I32(2)];
-                let result = context.invoke(&mut instance, "add", &args);
+                let result = context.invoke(&mut instance, &self.function_name, &args);
                 let body = match result.unwrap() {
                     ActionOutcome::Returned { values } => format!("{} returned {:#}", &self.module_path, values[0]).to_string().into_bytes(),
                     ActionOutcome::Trapped { message } => format!("Trap from within function: {}", message).to_string().into_bytes(),
@@ -57,11 +62,12 @@ fn main() {
     let port = env::var("PORT").expect("PORT environment variable not set");
     let addr_port = format!("0.0.0.0:{}", port);
     let addr = addr_port.parse().unwrap();
+    let function_name = env::var("FUNCTION_NAME").expect("FUNCTION_NAME environment variable not set");
     let module_path = env::var("MODULE_PATH").expect("MODULE_PATH environment variable not set");
     println!("WASI Runtime started. Port: {}, Module path: {}", port, module_path);
     let binary: Vec<u8> = read_module(&module_path);
 
-    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(module_path.clone(), binary.clone()))).unwrap();
+    let server = Http::new().bind(&addr, move || Ok(WasmExecutor::new(function_name.clone(), module_path.clone(), binary.clone()))).unwrap();
     server.run().unwrap();
 }
 

@@ -35,6 +35,7 @@ COPY module /home/wasi/module
 ENV PORT=8080
 EXPOSE $PORT
 
+ENV FUNCTION_NAME=add
 ENV MODULE_PATH=/home/wasi/module/add.wasm
 
 USER wasi
