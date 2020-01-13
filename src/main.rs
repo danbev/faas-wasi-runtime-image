@@ -4,7 +4,6 @@ extern crate futures;
 use std::env;
 use futures::future::FutureResult;
 use hyper::{Get, StatusCode};
-use hyper::header::ContentLength;
 use hyper::server::{Http, Service, Request, Response};
 
 use cranelift_codegen::settings;
@@ -12,6 +11,8 @@ use cranelift_native;
 use std::fs::File;
 use std::io::Read;
 use wasmtime_jit::{ActionOutcome, Context, RuntimeValue, ActionError};
+
+mod add;
 
 //#[derive(Debug)]
 struct WasmExecutor {
@@ -30,27 +31,8 @@ pub trait RequestExtractor {
     fn extract(&self, request: Request) -> Vec<RuntimeValue> ;
 }
 
-impl RequestExtractor for WasmExecutor {
-    fn extract(&self, _request: Request) -> Vec<RuntimeValue> {
-        let mut vec = Vec::new();
-        vec.push(RuntimeValue::I32(42));
-        vec.push(RuntimeValue::I32(2));
-        return vec;
-    }
-}
-
 pub trait ResponseHandler {
     fn result_handler(&self, result: Result<ActionOutcome, ActionError>) -> Response;
-}
-
-impl ResponseHandler for WasmExecutor {
-    fn result_handler(&self, result: Result<ActionOutcome, ActionError>) -> Response {
-        let body = match result.unwrap() {
-            ActionOutcome::Returned { values } => format!("{} returned {:#}", &self.module_path, values[0]).to_string().into_bytes(),
-            ActionOutcome::Trapped { message } => format!("Trap from within function: {}", message).to_string().into_bytes(),
-        };
-        return Response::new().with_header(ContentLength(body.len() as u64)).with_body(body)
-    }
 }
 
 impl Service for WasmExecutor {
