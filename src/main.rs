@@ -11,7 +11,7 @@ use cranelift_codegen::settings;
 use cranelift_native;
 use std::fs::File;
 use std::io::Read;
-use wasmtime_jit::{ActionOutcome, Context, RuntimeValue};
+use wasmtime_jit::{ActionOutcome, Context, RuntimeValue, ActionError};
 
 //#[derive(Debug)]
 struct WasmExecutor {
@@ -39,6 +39,20 @@ impl RequestExtractor for WasmExecutor {
     }
 }
 
+pub trait ResponseHandler {
+    fn result_handler(&self, result: Result<ActionOutcome, ActionError>) -> Response;
+}
+
+impl ResponseHandler for WasmExecutor {
+    fn result_handler(&self, result: Result<ActionOutcome, ActionError>) -> Response {
+        let body = match result.unwrap() {
+            ActionOutcome::Returned { values } => format!("{} returned {:#}", &self.module_path, values[0]).to_string().into_bytes(),
+            ActionOutcome::Trapped { message } => format!("Trap from within function: {}", message).to_string().into_bytes(),
+        };
+        return Response::new().with_header(ContentLength(body.len() as u64)).with_body(body)
+    }
+}
+
 impl Service for WasmExecutor {
     type Request = Request;
     type Response = Response;
@@ -57,11 +71,7 @@ impl Service for WasmExecutor {
 
                 let args = &self.extract(req);
                 let result = context.invoke(&mut instance, &self.function_name, &args);
-                let body = match result.unwrap() {
-                    ActionOutcome::Returned { values } => format!("{} returned {:#}", &self.module_path, values[0]).to_string().into_bytes(),
-                    ActionOutcome::Trapped { message } => format!("Trap from within function: {}", message).to_string().into_bytes(),
-                };
-                Response::new().with_header(ContentLength(body.len() as u64)).with_body(body)
+                self.result_handler(result)
             },
             _ => Response::new().with_status(StatusCode::NotFound),})
         }
