@@ -2,8 +2,8 @@ use wasmtime_jit::{ActionOutcome, RuntimeValue, ActionError};
 use hyper::server::{Request, Response};
 use hyper::header::ContentLength;
 
-use crate::RequestExtractor;
-use crate::ResponseHandler;
+use crate::handler::RequestExtractor;
+use crate::handler::ResponseHandler;
 use crate::WasmExecutor;
 
 impl RequestExtractor for WasmExecutor {
