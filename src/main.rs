@@ -10,7 +10,7 @@ use cranelift_codegen::settings;
 use cranelift_native;
 use std::fs::File;
 use std::io::Read;
-use wasmtime_jit::{Context, ActionOutcome, RuntimeValue, ActionError};
+use wasmtime_jit::{Context};
 
 mod add;
 mod handler;
@@ -29,15 +29,6 @@ impl WasmExecutor {
         WasmExecutor { function_name, module_path, module_binary }
     }
 }
-/*
-pub trait RequestExtractor {
-    fn extract(&self, request: Request) -> Vec<RuntimeValue> ;
-}
-
-pub trait ResponseHandler {
-    fn result_handler(&self, result: Result<ActionOutcome, ActionError>) -> Response;
-}
-*/
 
 impl Service for WasmExecutor {
     type Request = Request;
