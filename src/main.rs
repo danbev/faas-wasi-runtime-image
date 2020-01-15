@@ -1,8 +1,10 @@
 extern crate wasm_executor;
+extern crate url;
 
 use wasmtime_jit::{ActionOutcome, RuntimeValue, ActionError};
 use hyper::server::{Request, Response};
 use hyper::header::ContentLength;
+use url::form_urlencoded;
 
 use wasm_executor::handler::RequestExtractor;
 use wasm_executor::handler::ResponseHandler;
@@ -10,10 +12,12 @@ use wasm_executor::handler::ResponseHandler;
 struct ReqHandler { }
 
 impl RequestExtractor for ReqHandler {
-    fn extract_args(&self, _request: Request) -> Vec<RuntimeValue> {
+    fn extract_args(&self, request: Request) -> Vec<RuntimeValue> {
+        let params = form_urlencoded::parse(request.uri().query().unwrap().as_bytes());
         let mut vec = Vec::new();
-        vec.push(RuntimeValue::I32(42));
-        vec.push(RuntimeValue::I32(2));
+        for p in params.into_iter() {
+          vec.push(RuntimeValue::I32(p.1.parse::<i32>().unwrap()));
+        }
         return vec;
     }
 }

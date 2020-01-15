@@ -49,8 +49,8 @@ WASI Runtime started. Module name: add.wasm
 ```
 From a different terminal session:
 ```console
-$ curl http://localhost:8080/data
-/home/wasi/module/add.wasm returned 44: i32
+$ curl 'http://localhost:8080/data?nr1=10&nr2=23'
+module: ./module/add.wasm, function: add, returned 33: i32
 ```
 
 To stop the container:
@@ -68,6 +68,6 @@ WASI Runtime started. Port: 8080, Module path: ./module/add.wasm
 ```
 And then from a second terminal you can call the service:
 ```console
-$ curl http://localhost:8080/data
-/home/wasi/module/add.wasm returned 44: i32
+$ curl 'http://localhost:8080/data?nr1=10&nr2=23'
+module: ./module/add.wasm, function: add, returned 33: i32
 ```
