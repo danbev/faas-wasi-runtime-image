@@ -2,9 +2,12 @@ use wasmtime_jit::{ActionOutcome, RuntimeValue, ActionError};
 use hyper::server::{Request, Response};
 
 pub trait RequestExtractor {
-    fn extract(&self, request: Request) -> Vec<RuntimeValue> ;
+    fn extract_args(&self, request: Request) -> Vec<RuntimeValue>;
 }
 
 pub trait ResponseHandler {
-    fn result_handler(&self, result: Result<ActionOutcome, ActionError>) -> Response;
+    fn create_response(&self,
+                       result: Result<ActionOutcome, ActionError>,
+                       module_path: &str,
+                       function_name: &str) -> Response;
 }
