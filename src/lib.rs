@@ -57,13 +57,8 @@ impl Service for WasmExecutor {
                 let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
 
                 let args: Vec<RuntimeValue> = self.request_handler.extract_args(req);
-                //let args: Vec<RuntimeValue> = self.extract_args(req);
-                //let args = Vec::new();
                 let result = context.invoke(&mut instance, &self.function_name, &args);
                 self.response_handler.create_response(result, &self.module_path, &self.function_name)
-                //ResponseHandler::result_handler(result)
-                //let body = "something".to_string().into_bytes();
-                //Response::new().with_header(ContentLength(body.len() as u64)).with_body(body)
             },
             _ => Response::new().with_status(StatusCode::NotFound),})
         }
