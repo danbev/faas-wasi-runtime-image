@@ -3,10 +3,10 @@ pub mod handler;
 use std::{fs::File, io::Read, env};
 use hyper::server::{Http, Service, Request, Response};
 use futures::future::FutureResult;
-use hyper::{Get, StatusCode};
+use hyper::{Get, StatusCode, Method, header::Headers};
 use cranelift_codegen::settings;
 use cranelift_native;
-use wasmtime_jit::{Context, RuntimeValue};
+use wasmtime_jit::{Context as WasmContext, RuntimeValue};
 
 use self::handler::RequestExtractor;
 use self::handler::ResponseHandler;
@@ -30,6 +30,16 @@ impl WasmExecutor {
     }
 }
 
+#[derive(Debug)]
+struct Context {
+    user: String,
+    method: Method,
+    headers: Headers,
+    path: String,
+    query: String,
+    body: String,
+}
+
 impl Service for WasmExecutor {
     type Request = Request;
     type Response = Response;
@@ -42,7 +52,7 @@ impl Service for WasmExecutor {
                 let isa_builder = cranelift_native::builder().unwrap();
                 let flag_builder = settings::builder();
                 let isa = isa_builder.finish(settings::Flags::new(flag_builder));
-                let mut context = Context::with_isa(isa);
+                let mut context = WasmContext::with_isa(isa);
 
                 let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
 
