@@ -52,12 +52,12 @@ impl Service for WasmExecutor {
                 let isa_builder = cranelift_native::builder().unwrap();
                 let flag_builder = settings::builder();
                 let isa = isa_builder.finish(settings::Flags::new(flag_builder));
-                let mut context = WasmContext::with_isa(isa);
+                let mut wasm_context = WasmContext::with_isa(isa);
 
-                let mut instance = context.instantiate_module(None, &self.module_binary).unwrap();
+                let mut instance = wasm_context.instantiate_module(None, &self.module_binary).unwrap();
 
                 let args: Vec<RuntimeValue> = self.request_handler.extract_args(req);
-                let result = context.invoke(&mut instance, &self.function_name, &args);
+                let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
                 self.response_handler.create_response(result, &self.module_path, &self.function_name)
             },
             _ => Response::new().with_status(StatusCode::NotFound),})
