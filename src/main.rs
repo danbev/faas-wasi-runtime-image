@@ -2,18 +2,19 @@ extern crate wasm_executor;
 extern crate url;
 
 use wasmtime_jit::{ActionOutcome, RuntimeValue, ActionError};
-use hyper::server::{Request, Response};
+use hyper::server::{Response};
 use hyper::header::ContentLength;
 use url::form_urlencoded;
 
-use wasm_executor::handler::RequestExtractor;
-use wasm_executor::handler::ResponseHandler;
+use wasm_executor::RequestExtractor;
+use wasm_executor::ResponseHandler;
+use wasm_executor::Context;
 
 struct ReqHandler { }
 
 impl RequestExtractor for ReqHandler {
-    fn extract_args(&self, request: Request) -> Vec<RuntimeValue> {
-        let params = form_urlencoded::parse(request.uri().query().unwrap().as_bytes());
+    fn extract_args(&self, context: Context) -> Vec<RuntimeValue> {
+        let params = form_urlencoded::parse(context.query.unwrap().as_bytes());
         let mut vec = Vec::new();
         for p in params.into_iter() {
           vec.push(RuntimeValue::I32(p.1.parse::<i32>().unwrap()));

@@ -1,15 +1,21 @@
-pub mod handler;
-
 use std::{fs::File, io::Read, env};
 use hyper::server::{Http, Service, Request, Response};
 use futures::future::FutureResult;
 use hyper::{Get, StatusCode, Method, header::Headers, Body};
 use cranelift_codegen::settings;
 use cranelift_native;
-use wasmtime_jit::{Context as WasmContext, RuntimeValue};
+use wasmtime_jit::{Context as WasmContext, RuntimeValue, ActionOutcome, ActionError};
 
-use self::handler::RequestExtractor;
-use self::handler::ResponseHandler;
+pub trait RequestExtractor {
+    fn extract_args(&self, context: Context) -> Vec<RuntimeValue>;
+}
+
+pub trait ResponseHandler {
+    fn create_response(&self,
+                       result: Result<ActionOutcome, ActionError>,
+                       module_path: &str,
+                       function_name: &str) -> Response;
+}
 
 //#[derive(Debug)]
 pub struct WasmExecutor {
@@ -31,13 +37,13 @@ impl WasmExecutor {
 }
 
 #[derive(Debug)]
-struct Context<'a> {
-    user: String,
-    method: Method,
-    headers: Headers,
-    path: String,
-    query: Option<&'a str>,
-    body: Option<&'a Body>,
+pub struct Context<'a> {
+    pub user: String,
+    pub method: Method,
+    pub headers: Headers,
+    pub path: String,
+    pub query: Option<&'a str>,
+    pub body: Option<&'a Body>,
 }
 
 impl Service for WasmExecutor {
@@ -58,7 +64,7 @@ impl Service for WasmExecutor {
                 let context = create_context(&req);
                 println!("{:#?}", context);
 
-                let args: Vec<RuntimeValue> = self.request_handler.extract_args(req);
+                let args: Vec<RuntimeValue> = self.request_handler.extract_args(context);
                 let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
                 self.response_handler.create_response(result, &self.module_path, &self.function_name)
             },
