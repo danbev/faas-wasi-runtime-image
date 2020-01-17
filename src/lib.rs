@@ -3,7 +3,7 @@ pub mod handler;
 use std::{fs::File, io::Read, env};
 use hyper::server::{Http, Service, Request, Response};
 use futures::future::FutureResult;
-use hyper::{Get, StatusCode, Method, header::Headers};
+use hyper::{Get, StatusCode, Method, header::Headers, Body};
 use cranelift_codegen::settings;
 use cranelift_native;
 use wasmtime_jit::{Context as WasmContext, RuntimeValue};
@@ -31,13 +31,13 @@ impl WasmExecutor {
 }
 
 #[derive(Debug)]
-struct Context {
+struct Context<'a> {
     user: String,
     method: Method,
     headers: Headers,
     path: String,
-    query: String,
-    body: String,
+    query: Option<&'a str>,
+    body: Option<&'a Body>,
 }
 
 impl Service for WasmExecutor {
@@ -55,6 +55,8 @@ impl Service for WasmExecutor {
                 let mut wasm_context = WasmContext::with_isa(isa);
 
                 let mut instance = wasm_context.instantiate_module(None, &self.module_binary).unwrap();
+                let context = create_context(&req);
+                println!("{:#?}", context);
 
                 let args: Vec<RuntimeValue> = self.request_handler.extract_args(req);
                 let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
@@ -62,6 +64,17 @@ impl Service for WasmExecutor {
             },
             _ => Response::new().with_status(StatusCode::NotFound),})
         }
+}
+
+fn create_context<'a>(req: &'a Request) -> Context<'a> {
+    Context {
+        user: String::from(""),
+        method: req.method().clone(),
+        headers: req.headers().clone(),
+        path: req.path().to_string(),
+        query: req.query(),
+        body: req.body_ref()
+    }
 }
 
 pub fn start(req_handler: fn() -> Box<dyn RequestExtractor>, res_handler: fn() -> Box<dyn ResponseHandler>) {
