@@ -6,6 +6,8 @@ use cranelift_codegen::settings;
 use cranelift_native;
 use wasmtime_jit::{Context as WasmContext, RuntimeValue, ActionOutcome, ActionError};
 
+use cloudevents::v02::{CloudEvent};
+
 pub trait RequestExtractor {
     fn extract_args(&self, context: Context) -> Vec<RuntimeValue>;
 }
@@ -44,6 +46,7 @@ pub struct Context<'a> {
     pub path: String,
     pub query: Option<&'a str>,
     pub body: Option<&'a Body>,
+    pub cloudevent: Option<CloudEvent>,
 }
 
 impl Service for WasmExecutor {
@@ -79,7 +82,8 @@ fn create_context<'a>(req: &'a Request) -> Context<'a> {
         headers: req.headers().clone(),
         path: req.path().to_string(),
         query: req.query(),
-        body: req.body_ref()
+        body: req.body_ref(),
+        cloudevent: None
     }
 }
 
