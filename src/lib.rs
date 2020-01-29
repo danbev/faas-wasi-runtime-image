@@ -1,7 +1,7 @@
 use std::{fs::File, io::Read, env};
 use hyper::server::{Http, Service, Request, Response};
 use futures::future::FutureResult;
-use hyper::{Get, StatusCode, Method, header::Headers, Body};
+use hyper::{Get, Post, StatusCode, Method, header::Headers, Body};
 use cranelift_codegen::settings;
 use cranelift_native;
 use wasmtime_jit::{Context as WasmContext, RuntimeValue, ActionOutcome, ActionError};
@@ -56,8 +56,8 @@ impl Service for WasmExecutor {
     type Future = FutureResult<Response, hyper::Error>;
 
     fn call(&self, req: Request) -> Self::Future {
-        futures::future::ok(match (req.method(), req.path()) {
-            (&Get, "/data") => {
+        futures::future::ok(match req.method() {
+            &Get | &Post => {
                 let isa_builder = cranelift_native::builder().unwrap();
                 let flag_builder = settings::builder();
                 let isa = isa_builder.finish(settings::Flags::new(flag_builder));
@@ -65,8 +65,6 @@ impl Service for WasmExecutor {
 
                 let mut instance = wasm_context.instantiate_module(None, &self.module_binary).unwrap();
                 let context = create_context(&req);
-                println!("{:#?}", context);
-
                 let args: Vec<RuntimeValue> = self.request_handler.extract_args(context);
                 let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
                 self.response_handler.create_response(result, &self.module_path, &self.function_name)
