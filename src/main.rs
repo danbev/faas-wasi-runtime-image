@@ -4,7 +4,6 @@ extern crate url;
 use wasmtime_jit::{ActionOutcome, RuntimeValue, ActionError};
 use hyper::server::{Response};
 use hyper::header::ContentLength;
-//use url::form_urlencoded;
 
 use wasm_executor::RequestExtractor;
 use wasm_executor::ResponseHandler;
@@ -15,13 +14,7 @@ struct ReqHandler { }
 impl RequestExtractor for ReqHandler {
     fn extract_args(&self, _context: Context) -> Vec<RuntimeValue> {
         println!("CloudEvent: {:?}", _context);
-        //let params = form_urlencoded::parse(context.query.unwrap().as_bytes());
         let mut vec = Vec::new();
-        /*
-        for p in params.into_iter() {
-          vec.push(RuntimeValue::I32(p.1.parse::<i32>().unwrap()));
-        }
-        */
         vec.push(RuntimeValue::I32(4));
         vec.push(RuntimeValue::I32(14));
         return vec;
