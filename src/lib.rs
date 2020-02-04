@@ -20,7 +20,6 @@ pub trait ResponseHandler {
     ) -> Response;
 }
 
-//#[derive(Debug)]
 pub struct WasmExecutor {
     function_name: String,
     module_path: String,
