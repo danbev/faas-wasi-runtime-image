@@ -9,15 +9,14 @@ use wasmtime_jit::{ActionError, ActionOutcome, Context as WasmContext, RuntimeVa
 use cloudevents::v02::CloudEvent;
 
 pub trait RequestExtractor {
-    fn extract_args(&self, context: Context) -> Vec<RuntimeValue>;
+    fn extract_args(&self, context: &Context) -> Vec<RuntimeValue>;
 }
 
 pub trait ResponseHandler {
     fn create_response(
         &self,
-        result: Result<ActionOutcome, ActionError>,
-        module_path: &str,
-        function_name: &str,
+        context: &Context,
+        result: Result<ActionOutcome, ActionError>
     ) -> Response;
 }
 
@@ -50,6 +49,8 @@ impl WasmExecutor {
 
 #[derive(Debug)]
 pub struct Context<'a> {
+    pub module_path: String,
+    pub function_name: String,
     pub user: String,
     pub method: Method,
     pub headers: Headers,
@@ -76,22 +77,22 @@ impl Service for WasmExecutor {
                 let mut instance = wasm_context
                     .instantiate_module(None, &self.module_binary)
                     .unwrap();
-                let context = create_context(&req);
-                let args: Vec<RuntimeValue> = self.request_handler.extract_args(context);
+                let context = create_context(&req, &self);
+                let args: Vec<RuntimeValue> = self.request_handler.extract_args(&context);
                 let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
                 self.response_handler.create_response(
-                    result,
-                    &self.module_path,
-                    &self.function_name,
-                )
+                    &context,
+                    result)
             }
             _ => Response::new().with_status(StatusCode::NotFound),
         })
     }
 }
 
-fn create_context<'a>(req: &'a Request) -> Context<'a> {
+fn create_context<'a>(req: &'a Request, executor: &WasmExecutor) -> Context<'a> {
     Context {
+        module_path: executor.module_path.clone(),
+        function_name: executor.function_name.clone(),
         user: String::from(""),
         method: req.method().clone(),
         headers: req.headers().clone(),
