@@ -85,7 +85,7 @@ impl Service for WasmExecutor {
                     .unwrap();
 
                 let context = create_context(&req, &self);
-                let args: Vec<RuntimeValue> = self.request_handler.extract_args(&context);
+                let args = self.request_handler.extract_args(&context);
 
                 let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
 
