@@ -3,8 +3,10 @@ use cranelift_native;
 use futures::future::FutureResult;
 use hyper::server::{Http, Request, Response, Service};
 use hyper::{header::Headers, Body, Get, Method, Post, StatusCode};
+use hyper::header::ContentLength;
 use std::{env, fs::File, io::Read};
 use wasmtime_jit::{ActionError, ActionOutcome, Context as WasmContext, RuntimeValue};
+use http::HeaderMap;
 
 use cloudevents::v02::CloudEvent;
 
@@ -12,12 +14,17 @@ pub trait RequestExtractor {
     fn extract_args(&self, context: &Context) -> Vec<RuntimeValue>;
 }
 
+pub struct WasmResponse {
+    pub body: Vec<u8>,
+    pub headers: Option<HeaderMap>,
+}
+
 pub trait ResponseHandler {
     fn create_response(
         &self,
         context: &Context,
         result: Result<ActionOutcome, ActionError>
-    ) -> Response;
+    ) -> WasmResponse;
 }
 
 pub struct WasmExecutor {
@@ -76,12 +83,18 @@ impl Service for WasmExecutor {
                 let mut instance = wasm_context
                     .instantiate_module(None, &self.module_binary)
                     .unwrap();
+
                 let context = create_context(&req, &self);
                 let args: Vec<RuntimeValue> = self.request_handler.extract_args(&context);
+
                 let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
-                self.response_handler.create_response(
+
+                let wasm_response = self.response_handler.create_response(
                     &context,
-                    result)
+                    result);
+                Response::new()
+                    .with_header(ContentLength(wasm_response.body.len() as u64))
+                    .with_body(wasm_response.body)
             }
             _ => Response::new().with_status(StatusCode::NotFound),
         })
