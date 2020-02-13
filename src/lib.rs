@@ -4,7 +4,7 @@ use hyper::{header::Headers, Body, Get, Method, Post, StatusCode};
 use hyper::header::ContentLength;
 use std::{env, fs::File, io::Read};
 use http::HeaderMap;
-use wasmtime::{Config, Engine, Store, Val, Module, Instance, Trap};
+use wasmtime::{Engine, Store, Val, Module, Instance, Trap};
 
 use cloudevents::v02::CloudEvent;
 
@@ -28,9 +28,9 @@ pub trait ResponseHandler {
 pub struct WasmExecutor {
     function_name: String,
     module_path: String,
-    module_binary: Vec<u8>,
     request_handler: Box<dyn RequestExtractor>,
     response_handler: Box<dyn ResponseHandler>,
+    module: Module,
 }
 
 impl WasmExecutor {
@@ -41,12 +41,14 @@ impl WasmExecutor {
         request_handler: Box<dyn RequestExtractor>,
         response_handler: Box<dyn ResponseHandler>,
     ) -> WasmExecutor {
+        let store = Store::new(&Engine::default());
+        let module = Module::new(&store, module_binary).unwrap();
         WasmExecutor {
             function_name,
             module_path,
-            module_binary,
             request_handler,
             response_handler,
+            module,
         }
     }
 }
@@ -73,11 +75,7 @@ impl Service for WasmExecutor {
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok(match req.method() {
             &Get | &Post => {
-                let config = Config::default();
-                let engine = Engine::new(&config);
-                let store = Store::new(&engine);
-                let module = Module::new(&store, &self.module_binary).unwrap();
-                let instance = Instance::new(&module, &[]).unwrap();
+                let instance = Instance::new(&self.module, &[]).unwrap();
                 let func = instance.get_export(&self.function_name).unwrap().func().unwrap();
 
                 let context = create_context(&req, &self);
