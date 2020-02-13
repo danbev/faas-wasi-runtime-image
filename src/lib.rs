@@ -37,12 +37,10 @@ impl WasmExecutor {
     fn new(
         function_name: String,
         module_path: String,
-        module_binary: Vec<u8>,
         request_handler: Box<dyn RequestExtractor>,
         response_handler: Box<dyn ResponseHandler>,
+        module: Module,
     ) -> WasmExecutor {
-        let store = Store::new(&Engine::default());
-        let module = Module::new(&store, module_binary).unwrap();
         WasmExecutor {
             function_name,
             module_path,
@@ -124,14 +122,16 @@ pub fn start(
         port, module_path
     );
     let binary: Vec<u8> = read_module(&module_path);
+    let store = Store::new(&Engine::default());
+    let module = Module::new_with_name(&store, binary, &module_path).unwrap();
     let server = Http::new()
         .bind(&addr, move || {
             Ok(WasmExecutor::new(
                 function_name.clone(),
                 module_path.clone(),
-                binary.clone(),
                 req_handler(),
                 res_handler(),
+                module.clone(),
             ))
         })
         .unwrap();
