@@ -3,6 +3,8 @@ name = "faas-wasm-runtime-image"
 version = "0.1.0"
 authors = ["Daniel Bevenius <daniel.bevenius@gmail.com>"]
 edition = "2018"
+license = "MIT"
+description = "Function as a service runtime image for WASI modules"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
