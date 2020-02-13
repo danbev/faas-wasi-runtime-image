@@ -1,17 +1,15 @@
-use cranelift_codegen::settings;
-use cranelift_native;
 use futures::future::FutureResult;
 use hyper::server::{Http, Request, Response, Service};
 use hyper::{header::Headers, Body, Get, Method, Post, StatusCode};
 use hyper::header::ContentLength;
 use std::{env, fs::File, io::Read};
-use wasmtime_jit::{ActionError, ActionOutcome, Context as WasmContext, RuntimeValue};
 use http::HeaderMap;
+use wasmtime::{Config, Engine, Store, Val, Module, Instance, Trap};
 
 use cloudevents::v02::CloudEvent;
 
 pub trait RequestExtractor {
-    fn extract_args(&self, context: &Context) -> Vec<RuntimeValue>;
+    fn extract_args(&self, context: &Context) -> Vec<Val>;
 }
 
 pub struct WasmResponse {
@@ -23,7 +21,7 @@ pub trait ResponseHandler {
     fn create_response(
         &self,
         context: &Context,
-        result: Result<ActionOutcome, ActionError>
+        result: Result<Box<[Val]>, Trap>
     ) -> WasmResponse;
 }
 
@@ -75,20 +73,18 @@ impl Service for WasmExecutor {
     fn call(&self, req: Request) -> Self::Future {
         futures::future::ok(match req.method() {
             &Get | &Post => {
-                let isa_builder = cranelift_native::builder().unwrap();
-                let flag_builder = settings::builder();
-                let isa = isa_builder.finish(settings::Flags::new(flag_builder));
-                let mut wasm_context = WasmContext::with_isa(isa);
-
-                let mut instance = wasm_context
-                    .instantiate_module(None, &self.module_binary)
-                    .unwrap();
+                let config = Config::default();
+                let engine = Engine::new(&config);
+                let store = Store::new(&engine);
+                let module = Module::new(&store, &self.module_binary).unwrap();
+                let instance = Instance::new(&module, &[]).unwrap();
+                let func = instance.get_export(&self.function_name).unwrap().func().unwrap();
 
                 let context = create_context(&req, &self);
                 let args = self.request_handler.extract_args(&context);
 
-                let result = wasm_context.invoke(&mut instance, &self.function_name, &args);
-
+                let result = func.call(&args);
+                
                 let wasm_response = self.response_handler.create_response(
                     &context,
                     result);

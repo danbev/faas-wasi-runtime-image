@@ -29,3 +29,9 @@ Then to publish:
 $ docker login
 $ docker push dbevenius/wasm-base-image
 ```
+
+### Publishing
+```console
+$ cargo login <api access token>
+$ cargo publish --dry-run
+```
