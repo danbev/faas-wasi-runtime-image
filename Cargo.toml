@@ -1,5 +1,5 @@
 [package]
-name = "faas-wasm-runtime-image"
+name = "faas-wasm-runtime"
 version = "0.1.0"
 authors = ["Daniel Bevenius <daniel.bevenius@gmail.com>"]
 edition = "2018"
@@ -15,13 +15,9 @@ name = "wasm_executor"
 path = "src/lib.rs"
 
 [dependencies]
+wasmtime = "0.11.0"
 hyper = "0.11.7"
 futures = "0.1.17"
-cranelift-codegen = { version = "0.36.0", features = ["enable-serde"] }
-cranelift-native = "0.36.0"
-wasmtime-wasi = "0.11.0"
-wasmtime = "0.11.0"
-wasmtime-jit = "0.11.0"
 url = "2.1.1"
 cloudevents = "0.1.1"
 http = "0.1.19"
