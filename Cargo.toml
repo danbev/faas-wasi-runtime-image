@@ -16,7 +16,7 @@ path = "src/lib.rs"
 
 [dependencies]
 wasmtime = "0.11.0"
-hyper = "0.11.7"
+hyper = "0.14.12"
 futures = "0.1.17"
 url = "2.1.1"
 cloudevents = "0.1.1"
